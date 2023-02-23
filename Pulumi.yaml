@@ -1,0 +1,7 @@
+name: compass-infra
+runtime:
+  name: python
+  options:
+    virtualenv: venv
+description: Infrastructure setup for K8s based CloudPort
+stackConfigDir: ../../pulumi/stack_config_files

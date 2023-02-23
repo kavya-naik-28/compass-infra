@@ -1,0 +1,435 @@
+# Values in this file are for reference only.
+# Configure the file based on the Service values in the AWS Account infrastructure must be brought up in.
+encryptionsalt: v1:9bAPi0KQ2a8=:v1:1JUUrawFXt0QMRWP:1AGPsEKVpz7MXS6HkejlCg6kPVKkRA==
+config:
+  aws:region: us-east-2
+  aws:skipMetadataApiCheck: "false"
+  aws:skipCredentialsValidation: "true"
+  compass-infra:infra:
+    cloud_provider: aws
+    enterprise: false
+    deployment_type: public
+
+    zone_mapping:
+      # Min 3 mappings
+      # Mapping of AMAGI Zones = AWS Availablity Zones
+      zone-a: us-east-2a
+      zone-b: us-east-2b
+
+    vpc:
+      create: true
+      cidr-range:
+      - 10.1.0.0/16
+      subnets:
+      # Minimum 3 Public and Private subnets
+      - zone: zone-a
+        cidr-range: 10.1.0.0/18
+        public: true
+      - zone: zone-b
+        cidr-range: 10.1.64.0/18
+        public: true
+      - zone: zone-a
+        cidr-range: 10.1.128.0/18
+        public: false
+      - zone: zone-b
+        cidr-range: 10.1.192.0/18
+        public: false
+
+      # create: false
+      # existing_vpc_details:
+      #   id: vpc-0ba0cac892164b0c4
+      #   cidr-range: 10.1.0.0/16
+      #   public_subnets:
+      #     zone-a: "subnet-03957f681c1d1b31f"
+      #     zone-b: "subnet-0b77951ddb0b9c19f"
+      #     zone-c: "subnet-02b1eb22bf208f4eb"
+
+      #   private_subnets:
+      #     zone-a: "subnet-069d58e144e499520"
+      #     zone-b: "subnet-0d67481c02e27b269"
+      #     zone-c: "subnet-09924cec52f9b07cc"
+
+    kubernetes_cluster:
+      zones:
+      # Provide atleast 3 Zones as configured in VPC
+      - zone-a
+      - zone-b
+      k8s_version: "1.21"
+      update_ami_on_nodegroups: False
+      additional_sg_id: ""
+
+      nodegroups:
+      - name: general-purpose
+        zones:
+        - zone-a
+        - zone-b
+        bootstrap_commands: |
+          echo 'Additional bootstrap commands'
+        capacities:
+          desired: 1
+          max: 15
+          min: 1
+        spot_instances: false
+        instance_types:
+        - t3a.xlarge
+        - t3.xlarge
+        labels:
+          role: general-purpose
+        tags:
+          description: Management Node group across Zone A and B
+        taints:
+        - effect: NO_SCHEDULE
+          key: general-purpose
+          value: "true"
+      # - name: automation
+      #   zones:
+      #   - zone-a
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 1
+      #     max: 15
+      #     min: 1
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarges
+      #   - c5a.4xlarge
+      #   - c5a.8xlarge
+      #   - c5a.16xlarge
+      #   labels:
+      #     role: web
+      #   tags:
+      #     description: Web Node group across Zone A and B
+      #     k8s.io/cluster-autoscaler/node-template/label/role: web
+      #     k8s.io/cluster-autoscaler/node-template/taint/web: true:NoSchedule
+      #   # taints commented as unsure if it will work with AMAGI_MANAGED
+      #   # taints:
+      #   # - effect: NO_SCHEDULE
+      #   #   key: web
+      #   #   value: "true"
+      # - name: mgmt-default
+      #   zones:
+      #   - zone-a
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 1
+      #     max: 3
+      #     min: 1
+      #   spot_instances: false
+      #   instance_types:
+      #   - t3.medium
+      #   labels:
+      #     role: mgmt
+      #   tags:
+      #     description: mgmt-default Node group across Zone A and B
+      # - name: playout-a
+      #   zones:
+      #   - zone-a
+      #   bootstrap_commands: |
+      #     #Increase the kernel socket buffer size
+      #     sysctl -w net.core.rmem_max=52428800
+      #     sysctl -w net.core.rmem_default=52428800
+      #     sysctl -w net.core.wmem_max=52428800
+      #     sysctl -w net.core.wmem_default=52428800
+
+      #     #By changing sched_rt_runtime_us, will give rr capability
+      #     sysctl -w kernel.sched_rt_runtime_us=-1
+
+      #     #limits the max number of datagrams queued in Unix domain socket's buffer.
+      #     sysctl -w net.unix.max_dgram_qlen=32768
+
+      #     #allow docker registries to be deployed as cluster service
+      #     echo '{{"bridge": "none", "log-driver": "json-file", "log-opts": {{ "max-size": "10m", "max-file": "10" }}, "live-restore": true, "max-concurrent-downloads": 10, "default-ulimits": {{ "msgqueue": {{ "Name": "msgqueue", "Hard": 10000000, "Soft": 10000000 }}}}}}' > /etc/docker/daemon.json
+
+      #     systemctl restart docker
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.4xlarge
+      #   - c5a.8xlarge
+      #   - c5a.16xlarge
+      #   labels:
+      #     role: device-a
+      #   tags:
+      #     description: Playout Zone A Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: device-a
+      #     k8s.io/cluster-autoscaler/node-template/taint/device-a: true:NoSchedule
+      #   taints:
+      #   - effect: NO_SCHEDULE
+      #     key: device-a
+      #     value: "true"
+      # - name: playout-b
+      #   zones:
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     #Increase the kernel socket buffer size
+      #     sysctl -w net.core.rmem_max=52428800
+      #     sysctl -w net.core.rmem_default=52428800
+      #     sysctl -w net.core.wmem_max=52428800
+      #     sysctl -w net.core.wmem_default=52428800
+
+      #     #By changing sched_rt_runtime_us, will give rr capability
+      #     sysctl -w kernel.sched_rt_runtime_us=-1
+
+      #     #limits the max number of datagrams queued in Unix domain socket's buffer.
+      #     sysctl -w net.unix.max_dgram_qlen=32768
+
+      #     #allow docker registries to be deployed as cluster service
+      #     echo '{{"bridge": "none", "log-driver": "json-file", "log-opts": {{ "max-size": "10m", "max-file": "10" }}, "live-restore": true, "max-concurrent-downloads": 10, "default-ulimits": {{ "msgqueue": {{ "Name": "msgqueue", "Hard": 10000000, "Soft": 10000000 }}}}}}' > /etc/docker/daemon.json
+
+      #     systemctl restart docker
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.4xlarge
+      #   - c5a.8xlarge
+      #   - c5a.16xlarge
+      #   labels:
+      #     role: device-b
+      #   tags:
+      #     description: Playout Zone B Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: device-b
+      #     k8s.io/cluster-autoscaler/node-template/taint/device-b: true:NoSchedule
+      #   taints:
+      #   - effect: NO_SCHEDULE
+      #     key: device-b
+      #     value: "true"
+      # - name: data-plane-worker-1
+      #   zones:
+      #   - zone-a
+      #   bootstrap_commands: |
+      #     sudo sed -i '$s/}}/,\n"default-ulimits": {{ "msgqueue": {{ "Name": "msgqueue", "Hard": 1280000, "Soft": 1280000 }}}}}}/' /etc/docker/daemon.json
+
+      #     sudo systemctl restart docker
+
+      #     sysctl -w net.core.rmem_max=83886080
+      #     sysctl -w net.core.rmem_default=83886080
+
+      #     while [ True ]; do sleep 30; sync; echo 3 > /proc/sys/vm/drop_caches ; done &
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.4xlarge
+      #   - c5a.8xlarge
+      #   - c5a.16xlarge
+      #   labels:
+      #     role: dataPlaneMedium
+      #   tags:
+      #     live: true
+      #     description: dataPlaneMedium
+      #     k8s.io/cluster-autoscaler/node-template/label/role: dataPlaneMedium
+      #     k8s.io/cluster-autoscaler/node-template/taint/dataPlaneMedium: true:NoSchedule
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: dataPlane
+      #     value: "true"
+      # - name: data-plane-worker-2
+      #   zones:
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     sudo sed -i '$s/}}/,\n"default-ulimits": {{ "msgqueue": {{ "Name": "msgqueue", "Hard": 1280000, "Soft": 1280000 }}}}}}/' /etc/docker/daemon.json
+
+      #     sudo systemctl restart docker
+
+      #     sysctl -w net.core.rmem_max=83886080
+      #     sysctl -w net.core.rmem_default=83886080
+
+      #     while [ True ]; do sleep 30; sync; echo 3 > /proc/sys/vm/drop_caches ; done &
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.4xlarge
+      #   - c5a.8xlarge
+      #   - c5a.16xlarge
+      #   labels:
+      #     role: dataPlaneHigh
+      #   tags:
+      #     live: true
+      #     description: Live Zone A Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: dataPlaneHigh
+      #     k8s.io/cluster-autoscaler/node-template/taint/dataPlaneHigh: true:NoSchedule
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: dataPlaneHigh
+      #     value: "true"
+      # - name: control-plane-worker-1
+      #   zones:
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     sudo sed -i '$s/}}/,\n"default-ulimits": {{ "msgqueue": {{ "Name": "msgqueue", "Hard": 1280000, "Soft": 1280000 }}}}}}/' /etc/docker/daemon.json
+
+      #     sudo systemctl restart docker
+
+      #     sysctl -w net.core.rmem_max=83886080
+      #     sysctl -w net.core.rmem_default=83886080
+
+      #     while [ True ]; do sleep 30; sync; echo 3 > /proc/sys/vm/drop_caches ; done &
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.4xlarge
+      #   - c5a.8xlarge
+      #   - c5a.16xlarge
+      #   labels:
+      #     role: controlPlane
+      #   tags:
+      #     live: true
+      #     description: Control Plane A Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: controlPlane
+      #     k8s.io/cluster-autoscaler/node-template/taint/controlPlane: true:NoSchedule
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: controlPlane
+      #     value: "true"
+      # - name: turnserver
+      #   zones:
+      #   - zone-a
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 1
+      #     max: 15
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarges
+      #   - c5a.4xlarge
+      #   - c5a.8xlarge
+      #   - c5a.16xlarge
+      #   labels:
+      #     role: turnserver
+      #   tags:
+      #     turnserver: true
+      #     description: Turnserver
+      #     k8s.io/cluster-autoscaler/node-template/label/role: turnserver
+      #   taints:
+      #   - effect: NO_SCHEDULE
+      #     key: turnserver
+      #     value: "true"
+      # - name: pkgr-worker-group
+      #   zones:
+      #   - zone-a
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.2xlarge
+      #   labels:
+      #     role: packager
+      #   tags:
+      #     vod: true
+      #     description: Package Basic Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: packager
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: packager
+      #     value: "true"
+      # - name: pkgr-worker-group-basic
+      #   zones:
+      #   - zone-a
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.2xlarge
+      #   labels:
+      #     role: packager-basic
+      #   tags:
+      #     vod: true
+      #     description: Package Basic Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: packager-basic
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: packager-basic
+      #     value: "true"
+      # - name: pkgr-worker-group-2
+      #   zones:
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.2xlarge
+      #   labels:
+      #     role: packager2
+      #   tags:
+      #     vod: true
+      #     description: Package Basic Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: packager2
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: packager2
+      #     value: "true"
+      # - name: pkgr-worker-group-2-basic
+      #   zones:
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 1
+      #     max: 50
+      #     min: 0
+      #   spot_instances: true
+      #   instance_types: # Configure atleast 3 instance_types larger than c5a.4xlarge
+      #   - c5a.2xlarge
+      #   labels:
+      #     role: packager2-basic
+      #   tags:
+      #     vod: true
+      #     description: Package Basic Node group
+      #     k8s.io/cluster-autoscaler/node-template/label/role: packager2-basic
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: packager2-basic
+      #     value: "true"
+      # - name: cpliveStorm
+      #   zones:
+      #   - zone-a
+      #   - zone-b
+      #   bootstrap_commands: |
+      #     echo 'Additional bootstrap commands'
+      #   capacities:
+      #     desired: 2
+      #     max: 15
+      #     min: 1
+      #   spot_instances: true
+      #   instance_types:
+      #   - c5.xlarge
+      #   labels:
+      #     role: cpliveStorm
+      #   taints:
+      #   - effect: NO_EXECUTE
+      #     key: cpliveStorm
+      #     value: "true"
+      #   tags:
+      #     description: cpliveStorm Node group across Zone A and B
+
