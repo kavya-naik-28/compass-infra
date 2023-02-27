@@ -49,6 +49,15 @@ config:
       #     zone-b: "subnet-0d67481c02e27b269"
       #     zone-c: "subnet-09924cec52f9b07cc"
 
+    db_cluster:
+      instance_class: db.t3.micro
+      username: amgcas
+      password: amagi123
+      launch_reader_writer: false # Set to false for dev/QA setups
+      # Minimum 2 zones required: https://tinyurl.com/3zs4ujvm
+      zone: zone-a
+    
+    
     kubernetes_cluster:
       zones:
       # Provide atleast 3 Zones as configured in VPC

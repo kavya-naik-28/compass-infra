@@ -28,8 +28,8 @@ class Vpc(ComponentResource):
         self.name = name
         self.__args = args
         if self.__args.vpc_create:
-            self.stack = get_stack()
-            self.lb = ec2.Eip("lb",
+            self.stack = get_stack() 
+            self.lb = ec2.Eip(f"{self.stack}-eip",
                 vpc=True)
             self.__vpc()
             self.__igw()
@@ -110,7 +110,8 @@ class Vpc(ComponentResource):
                 )
                 self.public_subnets[zone["zone"]] = vpc_subnet.id
                 if zone["zone"] == "zone-a":
-                    self.nat = ec2.NatGateway("example-nat",
+                    self.nat_name = f"{self.stack}-nat"
+                    self.nat = ec2.NatGateway(self.nat_name,
                         allocation_id = self.lb,
                         subnet_id=vpc_subnet.id
                     )

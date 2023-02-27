@@ -2,7 +2,7 @@ from pulumi import get_stack, Config
 
 from . import network
 from . import utils
-
+from . import database_instance
 
 from logger import logger
 
@@ -48,3 +48,13 @@ class AWS(object):
                 zone_mapping=self.zone_mapping,
             ),
         )
+
+        db_cluster = database_instance.DbInstance(
+            f"{self.stack}-cluster",
+            database_instance.DbInstanceArgs(
+                db_configs=self.config["db_cluster"],
+                zone_mapping = self.config["zone_mapping"]
+            ),
+        )
+
+
